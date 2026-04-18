@@ -1,3 +1,36 @@
-timestamp,5_stars,4_stars,3_stars,2_stars,1_stars,total_reviews,average_rating
-2026-04-18 19:00:25,1002,28,7,1,27,1065,4.86
-2026-04-18 19:10:35,1002,28,7,1,27,1065,4.86
+name: Weekly Google Maps Review Scraper
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browser
+        run: python -m playwright install chromium --with-deps
+
+      - name: Run scraper
+        run: python scrape_reviews.py
+
+      - name: Commit updated CSV
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add weekly_stats.csv
+          git diff --cached --quiet || git commit -m "Weekly review stats update $(date +'%Y-%m-%d')"
+          git push
